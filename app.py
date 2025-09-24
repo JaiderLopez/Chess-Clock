@@ -1,136 +1,149 @@
 import flet as ft
-from math import pi
+import threading
+import time
 
-class Player(ft.Container):
-   def __init__(self, number: int, time):
-      super().__init__(expand= True)
-      if number == 1:
-         main_color = "#ffffff"
-         second_color = "#000000"
-      elif number == 2:
-         main_color = "#000000"
-         second_color = "#ffffff"
-         self.rotate = ft.transform.Rotate(pi)
-
-      self.bgcolor = main_color
-      self.alignment = ft.alignment.bottom_center
-      self.border = ft.border.all(1, second_color)
-      self.width = 250
-      self.height = 280
-
-      self.minutes = time//60
-      self.seconds = time%60
-      self.texto = time
-      self.clock = ft.Text(self.texto, size= 30, color= second_color)
-      self.update_texto()
-
-      self.content = ft.Column(controls=[
-            ft.Text(f"Player {number}", color= second_color),
-            ft.Container(width= self.width * 0.7, height= 66, bgcolor= ft.Colors.with_opacity(0.33, "#828282"), 
-                        margin= ft.margin.only(bottom= 10), alignment= ft.alignment.center,
-                        content= self.clock
-            ) 
-         ], 
-      alignment= ft.MainAxisAlignment.END, horizontal_alignment= ft.CrossAxisAlignment.CENTER)
-
-   def update_texto(self,):
-      self.seconds %= 60
-      self.texto = f"{self.minutes} : {self.seconds}" if self.seconds > 9 else f"{self.minutes} : 0{self.seconds}"
-      self.clock.value = self.texto
-
-class Control(ft.Container):
-   def __init__(self,):
-      super().__init__(expand=True, expand_loose= True)
-      # self.bgcolor = "#438589"
-      self.gradient = ft.LinearGradient(colors= ["#f6f6f6" ,"#828282",])
-      self. width = 70
-      self.height = 50
-      self.border_radius = 5
-      self.border = ft.border.all(1, "black")
-
-      # self.content = ft.Icon(name= icon, color= 'black')
-      # self.on_click = fun
-
-class Settings(Control):
-   def __init__(self,):
-      super().__init__()
-      self.icon = ft.Icons.SETTINGS
-
-      self.content = ft.Icon(name= self.icon, color= 'black')
-
-class Play_Pause(Control):
-   def __init__(self,):
-      super().__init__()
-      self.icon1 = ft.Icons.PLAY_CIRCLE_OUTLINE_SHARP
-      self.icon2 = ft.Icons.PAUSE_CIRCLE_FILLED_OUTLINED
-      self.content = ft.Icon(name= self.icon1, color= 'black')
-
-class Reload_Plus(Control):
-   def __init__(self,):
-      super().__init__()
-      self.icon1 = ft.Icons.RESTART_ALT_OUTLINED
-      self.icon2 = ft.Icons.PLUS_ONE
-      self.content = ft.Icon(name= self.icon1, color= 'black')
-
-
+#models
+from models.botones import *
+from models.player import Player
+from validations.clock import ChessClock
 
 class App(ft.Container):
-# ---------------------------------------- CONTROLES ----------------------------------------
-   def __init__(self, page):
-      super().__init__()
-      self.page = page
-      self.colors_list = {
-         "player1": "#ffffff",
-         "player2": "#000000",
-         "clock_bg": "#828282",
-         "controls": "#438589",
-         # "bg": "#828282",
-         "bg": "#B3B7A6",
-         "random": "#a72f66",
-      }
-      #  players
-      self.time_player1 = 0
-      self.time_player2 = 0
-      self.player1 = Player(1, self.time_player1)
-      self.player2 = Player(2, self.time_player2)
-      
-      #controls
-      self.controls_list = ft.Row(controls=[
-         Settings(),
-         Play_Pause(),
-         Reload_Plus(),
-      
-      ], alignment= ft.MainAxisAlignment.CENTER, spacing= 20
-      )
-      self.content = ft.Text('Hello World', size= 28, text_align= 'center', style= ft.TextStyle(italic= True))
- 
-# ---------------------------------------- GRAPHICS ---------------------------------------- 
-   def build(self):
-      self.page.window.width = 380
-      self.page.window.height = 680
-      self.page.padding = 0
-      self.page.bgcolor = self.colors_list['bg']
-      self.page.add(ft.Column(
-         controls= [
-            self.player2,
-            self.controls_list,
-            self.player1,
-         ], horizontal_alignment= ft.CrossAxisAlignment.CENTER,
-         alignment= ft.MainAxisAlignment.CENTER,
-      ))
-   
-   def prueba(self, e):
-      print("click")
-      self.player1.seconds-=1
-      self.player1.update_texto()
-      self.page.update()
- 
-# ---------------------------------------- FUNCIONES ---------------------------------------- 
- 
- 
+    # ---------------------------------------- CONTROLES ----------------------------------------
+    def __init__(self, page):
+        super().__init__()
+        self.page = page
+        self.dialog = None
+        self.colors_list = {
+            "player1": "#ffffff",
+            "player2": "#000000",
+            "clock_bg": "#828282",
+            "controls": "#438589",
+            "bg": "#B3B7A6",
+            "random": "#a72f66",
+        }
+        #  players
+        self.time_player1 = 300
+        self.time_player2 = 300
+        self.increment = 0
+        self.player1 = Player(1, self.time_player1)
+        self.player2 = Player(2, self.time_player2)
+
+        self.player1.on_click = self.switch_player_turn
+        self.player2.on_click = self.switch_player_turn
+
+        # clock
+        self.chess_clock = ChessClock(self.time_player1, self.time_player2, self.update_ui, self.increment)
+        self.game_started = False
+        self.pause_event = threading.Event()
+
+        #controls
+        self.settings_button = Settings()
+        self.settings_button.on_click = self.open_settings
+        self.play_pause_button = Play_Pause()
+        self.play_pause_button.on_click = self.play_pause
+        self.reload_button = Reload_Plus()
+        self.reload_button.on_click = self.reload_game
+        
+        self.controls_list = ft.Row(controls=[
+            self.settings_button,
+            self.play_pause_button,
+            self.reload_button,
+        ], alignment=ft.MainAxisAlignment.CENTER, spacing=20
+        )
+        self.content = ft.Column(
+            controls=[
+                self.player2,
+                self.controls_list,
+                self.player1,
+            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            alignment=ft.MainAxisAlignment.CENTER,
+        )
+
+    # ---------------------------------------- FUNCIONES ----------------------------------------
+    def play_pause(self, e):
+        if not self.game_started:
+            self.game_started = True
+            self.chess_clock.running = True
+            self.pause_event.set()
+            timer_thread = threading.Thread(target=self.chess_clock.countdown, args=(self.pause_event,))
+            timer_thread.start()
+            self.play_pause_button.content.name = self.play_pause_button.icon2
+        else:
+            if self.pause_event.is_set():
+                self.pause_event.clear()
+                self.play_pause_button.content.name = self.play_pause_button.icon1
+            else:
+                self.pause_event.set()
+                self.play_pause_button.content.name = self.play_pause_button.icon2
+        self.page.update()
+
+    def reload_game(self, e):
+        self.chess_clock.running = False
+        self.game_started = False
+        self.chess_clock = ChessClock(self.time_player1, self.time_player2, self.update_ui, self.increment)
+        self.update_ui(self.time_player1, self.time_player2)
+        self.play_pause_button.content.name = self.play_pause_button.icon1
+        self.page.update()
+
+    def open_settings(self, e):
+        def set_time(new_time, new_increment=0):
+            self.time_player1 = new_time
+            self.time_player2 = new_time
+            self.increment = new_increment
+            self.reload_game(None)
+            self.close_dialog()
+
+        self.dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Settings"),
+            content=ft.Column([
+                ft.ElevatedButton("1 min", on_click=lambda _: set_time(60, 0)),
+                ft.ElevatedButton("3 min", on_click=lambda _: set_time(180, 0)),
+                ft.ElevatedButton("3 | 2", on_click=lambda _: set_time(180, 2)),
+                ft.ElevatedButton("10 min", on_click=lambda _: set_time(600, 0)),
+                ft.ElevatedButton("15 min", on_click=lambda _: set_time(900, 0)),
+            ], tight=True),
+            actions=[ft.TextButton("Close", on_click=self.close_dialog)],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+        self.page.overlay.append(self.dialog)
+        self.dialog.open = True
+        self.page.update()
+
+    def close_dialog(self, e=None):
+        if self.dialog and self.dialog in self.page.overlay:
+            self.dialog.open = False
+            self.page.update()
+            # Let the close animation finish before removing, you can adjust the time
+            time.sleep(0.1)
+            self.page.overlay.remove(self.dialog)
+            self.page.update()
+
+    def switch_player_turn(self, e):
+        if self.game_started:
+            self.chess_clock.switch_player()
+            self.update_ui(self.chess_clock.time_player1, self.chess_clock.time_player2)
+
+    def update_ui(self, time_player1, time_player2):
+        self.player1.minutes = time_player1 // 60
+        self.player1.seconds = time_player1 % 60
+        self.player1.update_texto()
+
+        self.player2.minutes = time_player2 // 60
+        self.player2.seconds = time_player2 % 60
+        self.player2.update_texto()
+
+        self.page.update()
+
+
 def main(page: ft.Page):
-   app = App(page)
-   app.build()
- 
+    page.window.width = 380
+    page.window.height = 680
+    page.padding = 0
+    page.bgcolor = "#B3B7A6"
+
+    app = App(page)
+    page.add(app)
+
 if __name__ == '__main__':
-   ft.app(target = main)
+    ft.app(target=main)

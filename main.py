@@ -26,9 +26,7 @@ class App(ft.Container):
         self.time_player2 = 300
         self.increment = 0
         self.player1 = Player(1, self.time_player1)
-        self.player1.col = {"xs": 12, "sm": 12, "md": 4, "lg": 4}
         self.player2 = Player(2, self.time_player2)
-        self.player2.col = {"xs": 12, "sm": 12, "md": 4, "lg": 4}
 
         self.player1.on_click = self.switch_player_turn
         self.player2.on_click = self.switch_player_turn
@@ -46,19 +44,19 @@ class App(ft.Container):
         self.reload_button = Reload_Plus()
         self.reload_button.on_click = self.reload_game
         
-        self.controls_list = ft.ResponsiveRow(controls=[
+        self.controls_list = ft.Row(controls=[
             self.settings_button,
             self.play_pause_button,
             self.reload_button,
         ], alignment=ft.MainAxisAlignment.CENTER, spacing=20
         )
-        self.content = ft.ResponsiveRow(
+        self.content = ft.Column(
             controls=[
                 self.player2,
                 self.controls_list,
                 self.player1,
             ], alignment=ft.MainAxisAlignment.CENTER,
-            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         )
 
     # ---------------------------------------- FUNCIONES ----------------------------------------

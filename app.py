@@ -16,17 +16,19 @@ class App(ft.Container):
         self.colors_list = {
             "player1": "#ffffff",
             "player2": "#000000",
-            "clock_bg": "#828282",
-            "controls": "#438589",
-            "bg": "#B3B7A6",
-            "random": "#a72f66",
+            "clock_bg": "#2d2d2d",
+            "controls": "#2d2d2d",
+            "bg": "#1e1e1e",
+            "accent": "#4caf50",
         }
         #  players
         self.time_player1 = 300
         self.time_player2 = 300
         self.increment = 0
         self.player1 = Player(1, self.time_player1)
+        self.player1.col = {"xs": 12, "sm": 12, "md": 4, "lg": 4}
         self.player2 = Player(2, self.time_player2)
+        self.player2.col = {"xs": 12, "sm": 12, "md": 4, "lg": 4}
 
         self.player1.on_click = self.switch_player_turn
         self.player2.on_click = self.switch_player_turn
@@ -44,19 +46,19 @@ class App(ft.Container):
         self.reload_button = Reload_Plus()
         self.reload_button.on_click = self.reload_game
         
-        self.controls_list = ft.Row(controls=[
+        self.controls_list = ft.ResponsiveRow(controls=[
             self.settings_button,
             self.play_pause_button,
             self.reload_button,
         ], alignment=ft.MainAxisAlignment.CENTER, spacing=20
         )
-        self.content = ft.Column(
+        self.content = ft.ResponsiveRow(
             controls=[
                 self.player2,
                 self.controls_list,
                 self.player1,
-            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            alignment=ft.MainAxisAlignment.CENTER,
+            ], alignment=ft.MainAxisAlignment.CENTER,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
         )
 
     # ---------------------------------------- FUNCIONES ----------------------------------------
@@ -95,16 +97,17 @@ class App(ft.Container):
 
         self.dialog = ft.AlertDialog(
             modal=True,
-            title=ft.Text("Settings"),
+            title=ft.Text("Settings", color="white"),
             content=ft.Column([
-                ft.ElevatedButton("1 min", on_click=lambda _: set_time(60, 0)),
-                ft.ElevatedButton("3 min", on_click=lambda _: set_time(180, 0)),
-                ft.ElevatedButton("3 | 2", on_click=lambda _: set_time(180, 2)),
-                ft.ElevatedButton("10 min", on_click=lambda _: set_time(600, 0)),
-                ft.ElevatedButton("15 min", on_click=lambda _: set_time(900, 0)),
+                ft.ElevatedButton("1 min", on_click=lambda _: set_time(60, 0), bgcolor=self.colors_list["controls"], color="white"),
+                ft.ElevatedButton("3 min", on_click=lambda _: set_time(180, 0), bgcolor=self.colors_list["controls"], color="white"),
+                ft.ElevatedButton("3 | 2", on_click=lambda _: set_time(180, 2), bgcolor=self.colors_list["controls"], color="white"),
+                ft.ElevatedButton("10 min", on_click=lambda _: set_time(600, 0), bgcolor=self.colors_list["controls"], color="white"),
+                ft.ElevatedButton("15 min", on_click=lambda _: set_time(900, 0), bgcolor=self.colors_list["controls"], color="white"),
             ], tight=True),
-            actions=[ft.TextButton("Close", on_click=self.close_dialog)],
+            actions=[ft.TextButton("Close", on_click=self.close_dialog, style=ft.ButtonStyle(color=self.colors_list["accent"]))],
             actions_alignment=ft.MainAxisAlignment.END,
+            bgcolor=self.colors_list["bg"]
         )
         self.page.overlay.append(self.dialog)
         self.dialog.open = True
@@ -137,10 +140,8 @@ class App(ft.Container):
 
 
 def main(page: ft.Page):
-    page.window.width = 380
-    page.window.height = 680
     page.padding = 0
-    page.bgcolor = "#B3B7A6"
+    page.bgcolor = "#1e1e1e"
 
     app = App(page)
     page.add(app)

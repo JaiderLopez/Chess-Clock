@@ -2,8 +2,8 @@ import flet as ft
 from math import pi
 
 class Player(ft.Container):
-   def __init__(self, number: int, time):
-      super().__init__(expand= True)
+   def __init__(self, number: int, time, **kwargs):
+      super().__init__(expand= True, **kwargs)
       if number == 1:
          main_color = "#ffffff"
          second_color = "#000000"
@@ -14,9 +14,6 @@ class Player(ft.Container):
 
       self.bgcolor = main_color
       self.alignment = ft.alignment.bottom_center
-      self.border = ft.border.all(1, second_color)
-      self.width = 250
-      self.height = 280
 
       self.minutes = time//60
       self.seconds = time%60
@@ -26,7 +23,7 @@ class Player(ft.Container):
 
       self.content = ft.Column(controls=[
             ft.Text(f"Player {number}", color= second_color),
-            ft.Container(width= self.width * 0.7, height= 66, bgcolor= ft.Colors.with_opacity(0.33, "#828282"), 
+            ft.Container(expand=True, bgcolor= ft.colors.TRANSPARENT, 
                         margin= ft.margin.only(bottom= 10), alignment= ft.alignment.center,
                         content= self.clock
             ) 
